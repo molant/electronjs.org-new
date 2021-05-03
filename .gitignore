@@ -1,6 +1,7 @@
 node_modules
 .docusaurus
 .DS_Store
+.env
 .vscode/settings.json
 build/
 content/

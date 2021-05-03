@@ -44,10 +44,37 @@ yarn start
 
 `yarn start` starts a local development server and open up a browser window. Most changes are reflected live without having to restart the server.
 
-## Build
+# Repository content organization
 
-```console
-yarn build
+This repository contains the code for 3 related things:
+
+- The code to generate the contents of https://beta.electronjs.org
+- [`create-electron-documentation`][ced] package
+- The webhook that receives updates from `electron/electron` and
+  sends a `repository_dispatch` to trigger GitHub actions.
+
+The content of this repository is organized as follows:
+
+```
+└─ root
+    |
+    ├─ .github/workflows → The definitions for the GitHub actions
+    |
+    ├─ webhook → The webhook server responsible of triggering
+    |        GitHub actions
+    |
+    ├─ create-electron-documentation → Code for the npm package
+    |        of the same name. Read the readme in the folder
+    |        for more information.
+    |
+    ├─ scripts → The code for the package.json tasks and GitHub
+    |        actions
+    |
+    ├─ spec → Tests for the scripts
+    |
+    ├─ src → Docusaurus code
+    |
+    ├─ static → Docusaurus static assets
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+[ced]: https://npmjs.com/package/create-electron-documentation

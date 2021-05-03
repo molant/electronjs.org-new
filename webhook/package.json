@@ -1,0 +1,27 @@
+{
+  "name": "webhook",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Please run yarn test from the root\" && exit 1",
+    "development": "smee --target http://localhost:3000/webhook -u"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@octokit/graphql": "^4.6.1",
+    "body-parser": "^1.19.0",
+    "dotenv-safe": "^8.2.0",
+    "express": "^4.17.1",
+    "got": "^11.8.2",
+    "latest-version": "^5.1.0",
+    "semver": "^6.3.0"
+  },
+  "devDependencies": {
+    "@octokit/webhooks-types": "^3.71.2",
+    "smee-client": "^1.2.2"
+  }
+}
