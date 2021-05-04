@@ -1,46 +1,16 @@
 //@ts-check
 
 const semver = require('semver');
-const got = require('got').default;
 
 const {
   getLatestInformation,
   isEvent,
   verifyIntegrity,
+  sendRepositoryDispatchEvent,
 } = require('../utils/utils');
 
 const SOURCE_REPO = 'electron/electron';
 const TARGET_REPO = 'electron/electronjs.org-new';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const DOC_CHANGES_TYPE = 'doc_changes';
-
-/**
- * @typedef CustomRepositoryDispatchPayload
- * @property {string} sha
- */
-
-/**
- * Sends a `repository_dispatch` event top the given repo `target`
- * with the type `doc_changes` and the given commit `sha` as part
- * of the payload.
- * @param {string} target The repo to send the event to
- * @param {string} sha The commit's SHA
- */
-const sendRepositoryDispatchEvent = async (target, sha) => {
-  return got.post(`https://github.com/${target}/dispatches`, {
-    headers: {
-      Authorization: `Token ${GITHUB_TOKEN}`,
-      Accept: 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: {
-      event_type: DOC_CHANGES_TYPE, // This is the only event we can send for now
-      client_payload: {
-        sha,
-      },
-    },
-  });
-};
 
 /**
  * Verifies there is at least one file added, modified, or removed
@@ -75,7 +45,7 @@ const pushHandler = async (req, res) => {
   const ref = `refs/heads/${branch}`;
 
   /** @type {import('@octokit/webhooks-types').PushEvent} */
-  const payload = JSON.parse(req.body);
+  const payload = req.body;
 
   if (
     payload.ref === ref &&
@@ -85,11 +55,9 @@ const pushHandler = async (req, res) => {
     console.log('Send notification');
 
     await sendRepositoryDispatchEvent(TARGET_REPO, payload.after);
-
-    return res.status(200).send('Handled');
   }
 
-  return res.status(200).send('Unhandled');
+  return res.status(200).send();
 };
 
 /**
@@ -101,7 +69,7 @@ const pushHandler = async (req, res) => {
  */
 const releaseHandler = async (req, res) => {
   /** @type {import('@octokit/webhooks-types').ReleaseEvent} */
-  const payload = JSON.parse(req.body);
+  const payload = req.body;
 
   const { release } = await getLatestInformation();
 
@@ -126,11 +94,8 @@ const releaseHandler = async (req, res) => {
       TARGET_REPO,
       payload.release.target_commitish
     );
-
-    return res.status(200).send('Handled');
-  } else {
-    return res.status(200).send('Undhandled');
   }
+  return res.status(200).send();
 };
 
 /**
