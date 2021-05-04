@@ -71,7 +71,7 @@ const releaseHandler = async (req, res) => {
   /** @type {import('@octokit/webhooks-types').ReleaseEvent} */
   const payload = req.body;
 
-  const { release } = await getLatestInformation();
+  const { version } = await getLatestInformation();
 
   // Tags can be v14.0.0-nightly.20210504, v13.0.0-beta.21, v10.4.5, etc.
   // We only want to process the stable ones, i.e.: v10.4.5
@@ -88,7 +88,7 @@ const releaseHandler = async (req, res) => {
     !payload.release.draft &&
     !payload.release.prerelease &&
     isStable &&
-    semver.gte(tag, release)
+    semver.gte(tag, version)
   ) {
     await sendRepositoryDispatchEvent(
       TARGET_REPO,

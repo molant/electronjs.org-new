@@ -3,7 +3,7 @@ const got = require('got').default.extend({
 });
 
 const utils = require('../utils/utils');
-utils.sendRepositoryDispatchEvent = jest.fn();
+utils.sendRepositoryDispatchEvent = jest.fn().mockResolvedValue('');
 utils.getLatestInformation = jest.fn().mockResolvedValue({
   version: '12.0.6',
   branch: '12-x-y',
@@ -33,49 +33,35 @@ const freePort = (port) => {
 };
 
 describe('webhook server', () => {
-  /*
-     If we use `beforeEach` and `afterEach`
-     with a scoped `server`, this gets changed
-     and thus we cannot close it accurately and
-     the tests hang.
-   */
-  const before = async () => {
+  let server;
+
+  beforeEach(async () => {
     const port = getPort();
-    const server = await start(port);
+    server = await start(port);
+  });
 
-    return server;
-  };
-
-  const after = (server) => {
+  afterEach(() => {
     server.close();
     freePort(server.port);
-  };
+  });
 
-  describe('push', () => {
+  describe('push event', () => {
     it('responds to /', async () => {
-      const server = await before();
       const response = await got.get(`http://localhost:${server.port}/`);
 
       expect(response.statusCode).toBe(200);
       expect(response.body).toBe(`There's nothing here!`);
-
-      after(server);
     });
 
     it('returns a 404 if it does not exists', async () => {
-      const server = await before();
-
       const response = await got.get(
         `http://localhost:${server.port}/do-not-exists`
       );
 
       expect(response.statusCode).toBe(404);
-
-      after(server);
     });
 
     it('does not send a "repository_dispatch" when a "push" does not contain doc changes', async () => {
-      const server = await before();
       const payload = { ...fixtures.push };
       payload.commits = [];
 
@@ -92,12 +78,9 @@ describe('webhook server', () => {
 
       expect(response.statusCode).toBe(200);
       expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
-
-      after(server);
     });
 
     it('does not send a "repository_dispatch" when a "push" is for another branch', async () => {
-      const server = await before();
       const payload = { ...fixtures.push };
       payload.ref = 'refs/heads/1-x-y';
 
@@ -114,12 +97,9 @@ describe('webhook server', () => {
 
       expect(response.statusCode).toBe(200);
       expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
-
-      after(server);
     });
 
     it('sends a "repository_dispatch" when a "push" contains doc changes', async () => {
-      const server = await before();
       const payload = { ...fixtures.push };
 
       const response = await got.post(
@@ -135,102 +115,11 @@ describe('webhook server', () => {
 
       expect(response.statusCode).toBe(200);
       expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(1);
-
-      after(server);
     });
   });
 
-  describe('release', () => {
-    it('it does not send a "repository_dispatch" when a "release" is for a pre-release', async () => {
-      const server = await before();
-      const payload = { ...fixtures.release };
-      payload.release.prerelease = true;
-
-      const response = await got.post(
-        `http://localhost:${server.port}/webhook/release`,
-        {
-          headers: {
-            'X-GitHub-Event': 'release',
-          },
-          json: payload,
-          responseType: 'text',
-        }
-      );
-
-      expect(response.statusCode).toBe(200);
-      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
-
-      after(server);
-    });
-
-    it('it does not send a "repository_dispatch" when a "release" is for a draft', async () => {
-      const server = await before();
-      const payload = { ...fixtures.release };
-      payload.release.draft = true;
-
-      const response = await got.post(
-        `http://localhost:${server.port}/webhook/release`,
-        {
-          headers: {
-            'X-GitHub-Event': 'release',
-          },
-          json: payload,
-          responseType: 'text',
-        }
-      );
-
-      expect(response.statusCode).toBe(200);
-      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
-
-      after(server);
-    });
-
-    it('it does not send a "repository_dispatch" when a "release" is for a nightly', async () => {
-      const server = await before();
-      const payload = { ...fixtures.release };
-      payload.release.tag_name = 'v14.0.0-nightly.20210506';
-
-      const response = await got.post(
-        `http://localhost:${server.port}/webhook/release`,
-        {
-          headers: {
-            'X-GitHub-Event': 'release',
-          },
-          json: payload,
-          responseType: 'text',
-        }
-      );
-
-      expect(response.statusCode).toBe(200);
-      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
-
-      after(server);
-    });
-
-    it('it does not send a "repository_dispatch" when a "release" is for a previous version', async () => {
-      const server = await before();
-      const payload = { ...fixtures.release };
-      payload.release.tag_name = 'v11.10.0';
-
-      const response = await got.post(
-        `http://localhost:${server.port}/webhook/release`,
-        {
-          headers: {
-            'X-GitHub-Event': 'release',
-          },
-          json: payload,
-          responseType: 'text',
-        }
-      );
-
-      expect(response.statusCode).toBe(200);
-      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
-
-      after(server);
-    });
-
+  describe('release event', () => {
     it('it sends a "repository_dispatch" when a "release" is for a newer version', async () => {
-      const server = await before();
       const payload = { ...fixtures.release };
       payload.release.tag_name = 'v12.0.7';
 
@@ -247,8 +136,82 @@ describe('webhook server', () => {
 
       expect(response.statusCode).toBe(200);
       expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(1);
+    });
 
-      after(server);
+    it('it does not send a "repository_dispatch" when a "release" is for a pre-release', async () => {
+      const payload = { ...fixtures.release };
+      payload.release.prerelease = true;
+
+      const response = await got.post(
+        `http://localhost:${server.port}/webhook/release`,
+        {
+          headers: {
+            'X-GitHub-Event': 'release',
+          },
+          json: payload,
+          responseType: 'text',
+        }
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
+    });
+
+    it('it does not send a "repository_dispatch" when a "release" is for a draft', async () => {
+      const payload = { ...fixtures.release };
+      payload.release.draft = true;
+
+      const response = await got.post(
+        `http://localhost:${server.port}/webhook/release`,
+        {
+          headers: {
+            'X-GitHub-Event': 'release',
+          },
+          json: payload,
+          responseType: 'text',
+        }
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
+    });
+
+    it('it does not send a "repository_dispatch" when a "release" is for a nightly', async () => {
+      const payload = { ...fixtures.release };
+      payload.release.tag_name = 'v14.0.0-nightly.20210506';
+
+      const response = await got.post(
+        `http://localhost:${server.port}/webhook/release`,
+        {
+          headers: {
+            'X-GitHub-Event': 'release',
+          },
+          json: payload,
+          responseType: 'text',
+        }
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
+    });
+
+    it('it does not send a "repository_dispatch" when a "release" is for a previous version', async () => {
+      const payload = { ...fixtures.release };
+      payload.release.tag_name = 'v11.10.0';
+
+      const response = await got.post(
+        `http://localhost:${server.port}/webhook/release`,
+        {
+          headers: {
+            'X-GitHub-Event': 'release',
+          },
+          json: payload,
+          responseType: 'text',
+        }
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
     });
   });
 });

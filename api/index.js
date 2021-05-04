@@ -2,14 +2,15 @@
 require('dotenv-safe').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const app = express();
-
-app.use(bodyParser.json());
 
 const { addWebhooks } = require('./routes/webhook');
 
 const start = async (port) => {
   return new Promise(async (resolve) => {
+    const app = express();
+
+    app.use(bodyParser.json());
+
     await addWebhooks(app);
 
     app.get('/', (req, res) => {
