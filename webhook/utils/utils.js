@@ -123,9 +123,9 @@ const getSHAFromTag = async (repository, tagName) => {
     },
   } = await graphql(
     `
-      {
-        repository(name: "$repo", owner: "owner") {
-          release(tagName: "$tagName") {
+      query shaFromTag($owner: String!, $repo: String!, $tagName: String!) {
+        repository(owner: $owner, name: $repo) {
+          release(tagName: $tagName) {
             tagCommit {
               oid
             }
