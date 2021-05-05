@@ -2,6 +2,7 @@ const crypto = require('crypto');
 
 const latestVersion = require('latest-version');
 const got = require('got').default;
+const { graphql } = require('@octokit/graphql');
 
 const SECRET = process.env.SECRET;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -109,9 +110,53 @@ const sendRepositoryDispatchEvent = async (target, sha) => {
   });
 };
 
+/**
+ * For a given `tagName`, returns the associated SHA.
+ *
+ * @param {string} repository The repository in the form of `owner/name`
+ * @param {string} tagName
+ * @returns {Promise<string>}
+ */
+const getSHAFromTag = async (repository, tagName) => {
+  const [owner, repo] = repository.split('/');
+
+  const parameters = {
+    owner,
+    repo,
+    tagName,
+    headers: {
+      authorization: `token ${GITHUB_TOKEN}`,
+    },
+  };
+
+  const {
+    repository: {
+      release: {
+        tagCommit: { oid },
+      },
+    },
+  } = await graphql(
+    `
+      {
+        repository(name: "$repo", owner: "owner") {
+          release(tagName: "$tagName") {
+            tagCommit {
+              oid
+            }
+          }
+        }
+      }
+    `,
+    parameters
+  );
+
+  return oid;
+};
+
 module.exports = {
   isEvent,
   verifyIntegrity,
   getLatestInformation,
+  getSHAFromTag,
   sendRepositoryDispatchEvent,
 };

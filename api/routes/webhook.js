@@ -7,6 +7,7 @@ const {
   isEvent,
   verifyIntegrity,
   sendRepositoryDispatchEvent,
+  getSHAFromTag,
 } = require('../utils/utils');
 
 const SOURCE_REPO = 'electron/electron';
@@ -90,10 +91,12 @@ const releaseHandler = async (req, res) => {
     isStable &&
     semver.gte(tag, version)
   ) {
-    await sendRepositoryDispatchEvent(
-      TARGET_REPO,
-      payload.release.target_commitish
+    const sha = await getSHAFromTag(
+      payload.repository.full_name,
+      payload.release.tag_name
     );
+
+    await sendRepositoryDispatchEvent(TARGET_REPO, sha);
   }
   return res.status(200).send();
 };

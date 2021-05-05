@@ -2,12 +2,14 @@ const got = require('got').default.extend({
   throwHttpErrors: false,
 });
 
+const mockSHA = '123456';
 const utils = require('../utils/utils');
 utils.sendRepositoryDispatchEvent = jest.fn().mockResolvedValue('');
 utils.getLatestInformation = jest.fn().mockResolvedValue({
   version: '12.0.6',
   branch: '12-x-y',
 });
+utils.getSHAFromTag = jest.fn().mockResolvedValue(mockSHA);
 
 const { start } = require('../index');
 
@@ -80,7 +82,7 @@ describe('webhook server', () => {
       expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(0);
     });
 
-    it('does not send a "repository_dispatch" when a "push" is for another branch', async () => {
+    it('does not send a "repository_dispatch" when a "push" is for the non stable branch', async () => {
       const payload = { ...fixtures.push };
       payload.ref = 'refs/heads/1-x-y';
 
@@ -136,6 +138,10 @@ describe('webhook server', () => {
 
       expect(response.statusCode).toBe(200);
       expect(utils.sendRepositoryDispatchEvent).toBeCalledTimes(1);
+      expect(utils.sendRepositoryDispatchEvent).toBeCalledWith(
+        'electron/electronjs.org-new',
+        mockSHA
+      );
     });
 
     it('it does not send a "repository_dispatch" when a "release" is for a pre-release', async () => {
