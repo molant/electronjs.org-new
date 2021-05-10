@@ -6,6 +6,8 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
  * @param {string} commitMessage
  */
 const createCommit = async (commitMessage) => {
+  await execute('git config --global user.email "electron@github.com"');
+  await execute('git config --global user.name "electron-bot"');
   await execute('git add .');
   await execute(`git commit -m ${commitMessage}`);
 };
