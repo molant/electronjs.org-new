@@ -34,6 +34,8 @@ describe('process-docs-changes', () => {
     expect(gitMock.pushChanges).toHaveBeenCalledTimes(1);
     expect(gitMock.pushChanges).toHaveBeenCalledWith(
       'main',
+      'electron@github.com',
+      'electron-bot',
       '"chore: update ref to docs (🤖)"'
     );
   });
@@ -48,6 +50,8 @@ describe('process-docs-changes', () => {
     expect(gitMock.createPR).toHaveBeenCalledWith(
       'chore/docs-updates',
       'main',
+      'electron@github.com',
+      'electron-bot',
       '"chore: update ref to docs (🤖)"'
     );
   });

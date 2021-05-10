@@ -26,9 +26,11 @@ const changeExitCodeIfException = async (func) => {
   }
 };
 
+const HEAD = 'main';
 const PR_BRANCH = 'chore/docs-updates';
 const COMMIT_MESSAGE = '"chore: update ref to docs (🤖)"';
-const HEAD = 'main';
+const EMAIL = 'electron@github.com';
+const NAME = 'electron-bot';
 
 const processDocsChanges = async () => {
   const output = await getChanges();
@@ -43,12 +45,12 @@ const processDocsChanges = async () => {
     const lines = output.split('\n');
     if (lines.length > 1) {
       console.log(`New documents available, creating PR.`);
-      await createPR(PR_BRANCH, HEAD, COMMIT_MESSAGE);
+      await createPR(PR_BRANCH, HEAD, EMAIL, NAME, COMMIT_MESSAGE);
     } else {
       console.log(
         `Only existing content has been modified. Pushing changes directly.`
       );
-      await pushChanges(HEAD, COMMIT_MESSAGE);
+      await pushChanges(HEAD, EMAIL, NAME, COMMIT_MESSAGE);
     }
   }
 };

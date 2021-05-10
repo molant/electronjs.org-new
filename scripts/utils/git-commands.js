@@ -3,13 +3,17 @@ const { execute } = require('./execute');
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 /**
  * Creates a new commit with the current changes.
+ * @param {string} email
+ * @param {string} name
  * @param {string} commitMessage
  */
-const createCommit = async (commitMessage) => {
-  await execute('git config --global user.email "electron@github.com"');
-  await execute('git config --global user.name "electron-bot"');
-  await execute('git add .');
-  await execute(`git commit -m ${commitMessage}`);
+const createCommit = async (email, name, commitMessage) => {
+  await execute('git remote -vv');
+  await execute('git status');
+  await execute(`git config --global user.email ${email}`);
+  await execute(`git config --global user.name ${name}`);
+  await execute(`git add .`);
+  await execute(`git commit -am ${commitMessage}`);
 };
 
 /**
@@ -24,11 +28,14 @@ const getChanges = async () => {
 /**
  * Creates a new commit and pushes the given branch
  * @param {string} branch
+ * @param {string} email
+ * @param {string} name
  * @param {string} message
  */
-const pushChanges = async (branch, message) => {
-  await createCommit(message);
-  await execute(`git push origin ${branch}`);
+const pushChanges = async (branch, email, name, message) => {
+  await createCommit(email, name, message);
+  await execute(`git pull --rebase`);
+  await execute(`git push origin ${branch} --follow-tags`);
 };
 
 /**
@@ -36,11 +43,17 @@ const pushChanges = async (branch, message) => {
  * and creates a new PR if there is none available.
  * @param {string} branch
  * @param {string} base
+ * @param {string} email
+ * @param {string} name
  * @param {string} message
  */
-const createPR = async (branch, base, message) => {
-  await createCommit(message);
+const createPR = async (branch, base, email, name, message) => {
+  await createCommit(email, name, message);
+  await execute(`git checkout -b ${branch}`);
   await execute(`git push --force --set-upstream origin ${branch}`);
+
+  console.log(`Changes pushed to ${branch}`);
+
   const { context } = github;
   const octokit = github.getOctokit(GITHUB_TOKEN);
 
@@ -55,11 +68,13 @@ const createPR = async (branch, base, message) => {
   });
 
   if (doesExist) {
-    console.log('PR already exists, nothing to do.');
+    console.log('PR already exists, nothing to do');
   } else {
+    console.log('Creating PR');
     const result = await octokit.pulls.create({
       owner: context.repo.owner,
       repo: context.repo.repo,
+      title: message,
       base,
       head: branch,
     });
