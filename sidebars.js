@@ -294,5 +294,13 @@ module.exports = {
         'api/web-request',
       ],
     },
+    {
+      type: 'category',
+      label: 'Api',
+      items: [
+        'api/command-line-switches',
+        'api/command-line',
+      ],
+    },
   ],
 };
