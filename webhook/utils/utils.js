@@ -81,7 +81,7 @@ const verifyIntegrity = (req, res, next) => {
  * @param {string} sha The commit's SHA
  */
 const sendRepositoryDispatchEvent = async (target, sha) => {
-  return got.post(`https://github.com/${target}/dispatches`, {
+  return got.post(`https://api.github.com/${target}/dispatches`, {
     headers: {
       Authorization: `token ${GITHUB_TOKEN}`,
       Accept: 'application/vnd.github.v3+json',
