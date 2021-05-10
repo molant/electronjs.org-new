@@ -13,6 +13,19 @@ if (!process.env.CI) {
 
 const { createPR, getChanges, pushChanges } = require('./utils/git-commands');
 
+/**
+ * Wraps a function on a try/catch and changes the exit code if it fails.
+ * @param {Function} func
+ */
+const changeExitCodeIfException = async (func) => {
+  try {
+    await func();
+  } catch (e) {
+    console.error(e);
+    process.exitCode = 1;
+  }
+};
+
 const PR_BRANCH = 'chore/docs-updates';
 const COMMIT_MESSAGE = '"chore: update ref to docs (🤖)"';
 const HEAD = 'main';
@@ -41,7 +54,7 @@ const processDocsChanges = async () => {
 };
 
 if (require.main === module) {
-  processDocsChanges();
+  changeExitCodeIfException(processDocsChanges);
 }
 
 module.exports = {
