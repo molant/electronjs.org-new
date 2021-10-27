@@ -1,0 +1,62 @@
+# Reusable workflow for building and deploying the website
+# https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
+name: Build and deploy
+
+on:
+  workflow_call:
+    inputs:
+      locale:
+        description: 'Identifier for the locale to build'
+        default: ''
+        required: false
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      SAS:
+        required: true
+
+jobs:
+  build_and_deploy:
+    name: Build and deploy the website
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set environment variables
+        run: |
+          echo "GIT_BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: Install dependencies
+        uses: bahmutov/npm-install@HEAD
+      - name: Test
+        run: yarn test
+        env:
+          CI: true
+      - name: Download cache
+        run: ./scripts/bin/azcopy copy "https://electronjsorg.blob.core.windows.net/%24web/*?$SAS" "./build" --recursive
+        env:
+          SAS: ${{ secrets.SAS }}
+      - name: Rewrite doc paths if needed
+        if: ${{ [[ ${{needs.branch.outputs.branch}} =~ ^[0-9]+-x-y$ ]] }}
+        run: node scripts/build-as-doc-version.js ${GIT_BRANCH}
+      - name: Build site for locale
+        run: yarn i18n:build ${INPUT_LOCALE}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 'Publish Assets to Storage'
+        if: ${{ [[ ${{needs.branch.outputs.branch}} =~ ^[0-9]+-x-y$ ]] }}
+        run: ./scripts/bin/azcopy copy "./build/assets/*" "https://electronjsorg.blob.core.windows.net/%24web/assets?$SAS" --recursive
+        env:
+          SAS: ${{ secrets.SAS }}
+      - name: 'Publish docs to Storage'
+        if: ${{ [[ ${{needs.branch.outputs.branch}} =~ ^[0-9]+-x-y$ ]] }}
+        run: ./scripts/bin/azcopy copy "./build/docs/*" "https://electronjsorg.blob.core.windows.net/%24web/docs?$SAS" --recursive
+        env:
+          SAS: ${{ secrets.SAS }}
+      - name: 'Publish everything to Storage'
+        if: ${{ [[ ${{needs.branch.outputs.branch}} == main ]] }}
+        run: ./scripts/bin/azcopy copy "./build/*" "https://electronjsorg.blob.core.windows.net/%24web/?$SAS" --recursive
+        env:
+          SAS: ${{ secrets.SAS }}
