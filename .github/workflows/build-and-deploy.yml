@@ -38,7 +38,7 @@ jobs:
         run: ./scripts/bin/azcopy copy "https://electronjsorg.blob.core.windows.net/%24web/*?$SAS" "./build" --recursive
         env:
           SAS: ${{ secrets.SAS }}
-      - name: Rewrite doc paths if needed
+      - name: Rewrite
         if: ${{ [[ ${{needs.branch.outputs.branch}} =~ ^[0-9]+-x-y$ ]] }}
         run: node scripts/build-as-doc-version.js ${GIT_BRANCH}
       - name: Build site for locale
