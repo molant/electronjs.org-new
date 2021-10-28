@@ -7,9 +7,9 @@ on:
 
 jobs:
   build-and-deploy:
-    name: Deploys doc updates of previous versions
-    uses: ./.github/workflows/build-and-deploy.yml@v1
+    uses: molant/electronjs.org-new/.github/workflows/build-and-deploy.yml@v1
     with:
       locale: en
+    secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SAS: ${{ secrets.SAS }}

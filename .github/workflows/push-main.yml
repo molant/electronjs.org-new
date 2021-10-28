@@ -23,9 +23,9 @@ jobs:
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
   build-and-deploy:
-    name: Build and deploy
-    uses: ./.github/workflows/build-and-deploy.yml@v1
+    uses: molant/electronjs.org-new/.github/workflows/build-and-deploy.yml@v1
     with:
       locale: en
+    secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SAS: ${{ secrets.SAS }}
