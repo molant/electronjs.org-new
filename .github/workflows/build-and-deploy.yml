@@ -1,6 +1,6 @@
 # Reusable workflow for building and deploying the website
 # https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
-name: Build and deploy
+name: build-and-deploy
 
 on:
   workflow_call:
