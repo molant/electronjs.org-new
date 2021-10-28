@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    uses: molant/electronjs.org-new/.github/workflows/build-and-deploy.yml@v1
+    uses: molant/electronjs.org-new/.github/workflows/build-and-deploy.yml@workflows
     with:
       locale: en
     secrets:

@@ -29,7 +29,7 @@ jobs:
     needs: [update-docs]
     # If we are in the "main" branch, it means we have pushed the changed directly and should deploy
     if: ${{ [[ ${{needs.branch.outputs.branch}} == main ]] }}
-    uses: molant/electronjs.org-new/.github/workflows/build-and-deploy.yml@v1
+    uses: molant/electronjs.org-new/.github/workflows/build-and-deploy.yml@workflows
     with:
       locale: en
     secrets:
