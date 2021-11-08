@@ -26,12 +26,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: branch
-        run: echo "::set-output name=branch::`git branch --show-current`"
+        run: |
+          [[ $(git branch --show-current) =~ ^v[0-9]+-x-y$ ]]
+          echo "::set-output name=branch::`$?`"
   # GitHub will not kick the "push-XXX" workflow so we have to publish from here
   build-and-deploy:
     needs: [update-docs]
     # If we are in a version branch, it means we have pushed the changed directly and should deploy
-    if: ${{ needs.branch.outputs.branch =~ ^v[0-9]+-x-y$ }}
+    if: ${{ needs.branch.outputs.branch == 0 }}
     uses: electron/electronjs.org-new/.github/workflows/build-and-deploy.yml@main
     with:
       locale: en
